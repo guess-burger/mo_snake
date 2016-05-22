@@ -1,0 +1,14 @@
+{application, mo_snake, [
+	{description, ""},
+	{vsn, "0.1.0"},
+	{id, "git"},
+	{modules, []},
+	{registered, []},
+	{applications, [
+		kernel,
+		stdlib,
+    cowboy
+	]},
+	{mod, {mo_snake_app, []}},
+	{env, []}
+]}.

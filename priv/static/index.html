@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>Test</title>
+    <script src="../elm/snake.js"></script>
+</head>
+<body>
+    <script>
+        var div = document.getElementById('messages');
+
+        // embed our Elm program in that <div>
+        var snake = Elm.fullscreen(Elm.Main,{server_state:{snakes: []}});
+
+        l = window.location
+        ws = new WebSocket("ws://"+l.hostname+":"+l.port+"/echo");
+
+        ws.onmessage = function(event) {
+            console.dir(event.data);
+            snake.ports.server_state.send(JSON.parse(event.data));
+        };
+
+        snake.ports.directions.subscribe(send);
+
+        function send(command) {
+           data = JSON.stringify(command);
+            ws.send(data);
+        }
+
+
+    </script>
+</body>
+</html>

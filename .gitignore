@@ -1,0 +1,7 @@
+.idea/
+.erlang.mk/
+deps/
+ebin/
+elm-stuff/
+
+mo_snake.iml
