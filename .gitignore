@@ -4,4 +4,6 @@ deps/
 ebin/
 elm-stuff/
 
+priv/elm/snake.js
+
 mo_snake.iml
