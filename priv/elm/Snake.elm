@@ -8,7 +8,7 @@ import Keyboard
 import Maybe
 
 type alias Point = {x : Int, y : Int}
-type alias Snake = {points : List Point, id : String, colour: String}
+type alias Snake = {points : List Point, colour: String}
 type alias State = {snakes: List Snake}
 
 type Direction = Left | Right | Up | Down
@@ -39,7 +39,7 @@ render (w,h) state =
     color grey
         <| container w h middle
         <| color white
-        <| collage 300 300 (List.concatMap render_snake state.snakes)
+        <| collage 600 600 (List.concatMap render_snake state.snakes)
 
 render_snake snake =
     let
@@ -52,13 +52,14 @@ to_colour colour =
     case colour of
         "red" -> red
         "blue" -> blue
-        _ -> green
+        "green" -> green
+        _ -> black
 
 
 render_point colour point =
     let size = 25
-        xStart = size * -6
-        yStart = size * 6
+        xStart = size * -12
+        yStart = size * 12
     in square size
         |> filled colour
         |> move (toFloat (xStart + size*point.x), toFloat (yStart - size*point.y))
