@@ -17,6 +17,7 @@
 ]).
 
 -record(snake, {
+  id,
   dir_press,
   dir,
   points,
@@ -25,7 +26,8 @@
 
 -record(game, {
   is_over = false :: boolean(),
-  snakes :: #{any() => #snake{}}
+  snake1 :: #snake{},
+  snake2 :: #snake{}
 }).
 
 -opaque multi_snake_game() :: #game{}.
@@ -44,25 +46,27 @@
 
 new(Player1, Player2) ->
   P1Points = queue:from_list([{3,4},{2,4},{1,4}]),
-  P1Snake = #snake{dir_press = ?NONE, dir = ?RIGHT, points = P1Points, colour = <<"red">>},
+  P1Snake = #snake{id = Player1, dir_press = ?NONE, dir = ?RIGHT, points = P1Points, colour = <<"red">>},
 
   P2Points = queue:from_list([{3,20},{2,20},{1,20}]),
-  P2Snake = #snake{dir_press = ?NONE, dir = ?RIGHT, points = P2Points, colour = <<"blue">>},
+  P2Snake = #snake{id = Player2, dir_press = ?NONE, dir = ?RIGHT, points = P2Points, colour = <<"blue">>},
 
-  #game{ snakes = #{Player1=>P1Snake, Player2=>P2Snake} }.
+  #game{ snake1 = P1Snake, snake2 = P2Snake} .
 
 
 is_over(#game{is_over = IsOver}) ->
   IsOver.
 
 
-set_dir(SnakeId, Dir, #game{snakes=Snakes}=State) ->
-  #{SnakeId := Snake} = Snakes,
-  Snake2 = Snake#snake{dir_press = Dir},
-  State#game{snakes = Snakes#{SnakeId=>Snake2}}.
+set_dir(SnakeId, Dir, #game{snake1 = #snake{id = SnakeId}=Snake1}=State) ->
+  NewSnake1 = Snake1#snake{dir_press = Dir},
+  State#game{snake1 = NewSnake1};
+set_dir(SnakeId, Dir, #game{snake2 = #snake{id = SnakeId}=Snake2}=State) ->
+  NewSnake1 = Snake2#snake{dir_press = Dir},
+  State#game{snake2 = NewSnake1}.
 
 
-step(#game{snakes = Snakes}=G) ->
+step(#game{snake1 = Snake1, snake2 = Snake2}=G) ->
 
   % TODO add collision detection! and pellets!
 
@@ -72,15 +76,17 @@ step(#game{snakes = Snakes}=G) ->
   % should the other person win if you crash into them?
   % is head hitting head a draw?
 
+  % really need the pellets to be visible in the snake so that
+  % all is fair
+  % that means pellets need to be smaller than the snake blocks
 
 
-  Snakes2 = maps:map(fun step_snake/2, Snakes),
+  NewSnake1 = step_snake(Snake1),
+  NewSnake2 = step_snake(Snake2),
 
+  G#game{snake1 = NewSnake1, snake2 = NewSnake2}.
 
-
-  G#game{snakes =  Snakes2}.
-
-step_snake(_Id, Snake)->
+step_snake(Snake)->
   S2 = update_dir(Snake),
   #snake{points = Points, dir = Dir}=S2,
 
@@ -121,9 +127,8 @@ newHead({X,Y}, ?DOWN) ->
   {X,Y+1}.
 
 
-to_json(#game{ snakes = Snakes}) ->
-  SnakesList = maps:to_list(Snakes),
-  JsonSnakes = [ snake_to_json(Snake) || {_Id, Snake} <- SnakesList],
+to_json(#game{ snake1 = Snake1, snake2 = Snake2}) ->
+  JsonSnakes = [ snake_to_json(Snake1), snake_to_json(Snake2)],
   jsx:encode([{<<"snakes">>, JsonSnakes}]).
 
 snake_to_json(#snake{points = Points, colour = Colour}) ->
