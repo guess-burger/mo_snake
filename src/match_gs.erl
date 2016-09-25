@@ -31,7 +31,8 @@
 -record(playing_state, {
   player1 :: pid(),
   player2 :: pid(),
-  game :: multi_snake_game:multi_snake_game()
+  game :: multi_snake_game:multi_snake_game(),
+  timer_ref :: reference()
 }).
 
 %%%===================================================================
@@ -40,11 +41,6 @@
 
 
 start(Player1, Player2) ->
-  % FIXME this can't handle more than one match at the minute
-  % really need to have simple one for one
-  % Or maybe don't name them the same thing
-  % Going to not name them for now with the intention of simple 1 for 1 (why? what does it give us? also should i use start link then? probs not)
-
   gen_server:start(?MODULE, {Player1, Player2}, []).
 
 
@@ -86,16 +82,23 @@ handle_cast(_Request, State) ->
 handle_info(tick, #init_state{player1 = P1, player2 = P2}) ->
   % TODO really need to count the match in (3..2..1..GO)
   Game = multi_snake_game:new(P1,P2),
-  % FIXME do we need to cancel this at some point?
-  timer:send_interval(500, tick),
+  {ok, TimeRef} = timer:send_interval(500, tick),
   io:format("Match start~n"),
-  {noreply, #playing_state{player1=P1, player2 = P2, game = Game }};
+  {noreply, #playing_state{player1=P1, player2 = P2, game = Game, timer_ref = TimeRef}};
 handle_info(tick, #playing_state{game = Game}=State) ->
-  io:format("Tick~n"),
   UpdatedGame = multi_snake_game:step(Game),
-  State#playing_state.player1 ! {update, UpdatedGame},
-  State#playing_state.player2 ! {update, UpdatedGame},
-  {noreply, State#playing_state{game = UpdatedGame}};
+  % TODO check if the game is over
+  case multi_snake_game:is_over(UpdatedGame) of
+    false ->
+      State#playing_state.player1 ! {update, UpdatedGame},
+      State#playing_state.player2 ! {update, UpdatedGame},
+      {noreply, State#playing_state{game = UpdatedGame}};
+    true ->
+      % FIXME need to figure out how to make his work
+      State#playing_state.player1 ! {gameover, UpdatedGame},
+      State#playing_state.player2 ! {gameover, UpdatedGame},
+      {stop, normal, UpdatedGame}
+  end;
 handle_info(_Info, State) ->
   {noreply, State}.
 
@@ -121,7 +124,11 @@ player_left(PlayerPid, #playing_state{player1 = P1, player2 = P2}=State) ->
 
 player_left(P1, P2, PlayerLeft) when P1 == PlayerLeft->
   io:format("Player 1 ~p has left the match~n", [PlayerLeft]),
-  P2 ! won, % TODO should this be wrapped in a call in websocket_handler?
+  % TODO should this be wrapped in a call in websocket_handler?
+  % Also how we we make it render the last state of the game?
+  % P2 ! {gameover, UpdatedGame}
+  % we need to inform the ame that it is over and which user won if we want to do this
+  P2 ! won,
   ok;
 player_left(P1, P2, PlayerLeft) when P2 == PlayerLeft->
   io:format("Player 2 ~p has left the match~n", [PlayerLeft]),

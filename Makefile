@@ -1,12 +1,10 @@
 PROJECT = mo_snake
 
-DEPS = cowboy jsx meck
-
-dep_meck = git https://github.com/eproxus/meck.git 0.8.4
+DEPS = cowboy jsx sync
 
 include erlang.mk
 
-SHELL_OPTS = -pa ../mo_snake -eval 'application:ensure_all_started(mo_snake)'
+SHELL_OPTS = -pa ../mo_snake -eval 'application:ensure_all_started(sync)' -eval 'application:ensure_all_started(mo_snake)'
 
 
 elm:
