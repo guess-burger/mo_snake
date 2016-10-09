@@ -12,7 +12,4 @@ init([]) ->
 		{lobby, {lobby, start_link, []}, permanent, 5000, worker, [lobby]}
 	],
 
-	% FIXME maybe have a better supervision hierarchy
-	% Maybe, this sup has a lobby gen_server and a match sup
-
 	{ok, {{one_for_one, 1, 5}, Procs}}.

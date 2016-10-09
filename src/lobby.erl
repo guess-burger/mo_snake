@@ -39,13 +39,6 @@ start_link() ->
 
 
 register() ->
-  % TODO should this be a call and return a {lobby, Pid} or {game, Pid}
-  % Not sure about that.
-  % connections shouldn't know about each other but they do need to know
-  % about the game or lobby since they need to let them know if the have
-  % been disconnected. (does the websocket_handler need a FSM?)
-  % should the handlers register with a match/game or should the match/game
-  % inform the handlers?
   gen_server:cast(?SERVER, {register, self()}).
 
 
@@ -96,6 +89,4 @@ code_change(_OldVsn, State, _Extra) ->
 leave_lobby(UserPid, #state{waiting = UserPid}=State) ->
   State#state{waiting = undefined};
 leave_lobby(_UserPid, State) ->
-  % TODO figure out what to do here?
-  % TODO maybe the match needs to ack with the connection to confirm if they are still around or not
   State.

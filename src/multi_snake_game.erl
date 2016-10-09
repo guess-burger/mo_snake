@@ -11,9 +11,9 @@
   new/2,
   set_dir/3,
   step/1,
+  force_winner/2,
   is_over/1, result/2,
-  to_json/1, win_json/0, lose_json/0, draw_json/0,
-  win_json/1
+  to_json/1, win_json/1, lose_json/1, draw_json/1
 ]).
 
 -record(snake, {
@@ -83,11 +83,6 @@ set_dir(SnakeId, Dir, #game{snake2 = #snake{id = SnakeId} = Snake2} = State) ->
 
 
 step(#game{snake1 = Snake1, snake2 = Snake2, pellet = Pellet} = Game) ->
-
-  % TODO need to decide the rules of the game!
-  % should there be only one pellet? - YES
-  % should the other person win if you crash into them? - YES
-  % is head hitting head a draw? - YES
 
   % really need the pellets to be visible in the snake so that
   % all is fair
@@ -169,19 +164,23 @@ newHead({X, Y}, ?DOWN) ->
   {X, Y + 1}.
 
 new_pellet(#game{snake1 = #snake{points = Snake1}, snake2 = #snake{points = Snake2}} = Game) ->
+  % FIXME this function could be better. Issues with it are:
+  % * players might take up the whole screen
+  % * if players take a lot of space this function might run for a while
   PotentialPellet = {random:uniform(?WIDTH), random:uniform(?HEIGHT)},
 
   InS1 = queue:member(PotentialPellet, Snake1),
   InS2 = queue:member(PotentialPellet, Snake2),
 
-  % TODO there needs to be a better check here because
-  % * players might take up the whole screen
-  % * we might take a long time to find a spot
   if
     InS1 -> new_pellet(Game);
     InS2 -> new_pellet(Game);
     true -> Game#game{ pellet = PotentialPellet}
   end.
+
+
+force_winner(Winner, Game) ->
+  Game#game{ is_over = {true, Winner}}.
 
 
 to_json(#game{snake1 = Snake1, snake2 = Snake2, pellet = Pellet}) ->
@@ -206,11 +205,6 @@ win_json(#game{snake1 = Snake1, snake2 = Snake2}) ->
   JsonSnakes = [snake_to_json(Snake1), snake_to_json(Snake2)],
   jsx:encode([{<<"snakes">>, [TextSnake | JsonSnakes]}]).
 
-win_json() ->
-  Points = [{X + 3, Y + 8} || {X, Y} <- win_points()],
-  TextSnake = make_snake(points_to_json(Points), <<"black">>),
-  jsx:encode([{<<"snakes">>, [TextSnake]}]).
-
 win_points() ->
   % Thanks to http://www.dafont.com/pixeltext.font?text=Win+Lose+Draw
   [
@@ -234,10 +228,11 @@ win_points() ->
   ].
 
 
-lose_json() ->
+lose_json(#game{snake1 = Snake1, snake2 = Snake2}) ->
   Points = [{X + 3, Y + 8} || {X, Y} <- lose_points()],
   TextSnake = make_snake(points_to_json(Points), <<"black">>),
-  jsx:encode([{<<"snakes">>, [TextSnake]}]).
+  JsonSnakes = [snake_to_json(Snake1), snake_to_json(Snake2)],
+  jsx:encode([{<<"snakes">>, [TextSnake | JsonSnakes]}]).
 
 lose_points() ->
   [
@@ -261,10 +256,12 @@ lose_points() ->
     {15, 5}, {15, 3}, {15, 1}
   ].
 
-draw_json() ->
+
+draw_json(#game{snake1 = Snake1, snake2 = Snake2}) ->
   Points = [{X + 4, Y + 8} || {X, Y} <- draw_points()],
   TextSnake = make_snake(points_to_json(Points), <<"black">>),
-  jsx:encode([{<<"snakes">>, [TextSnake]}]).
+  JsonSnakes = [snake_to_json(Snake1), snake_to_json(Snake2)],
+  jsx:encode([{<<"snakes">>, [TextSnake | JsonSnakes]}]).
 
 draw_points() ->
   [
