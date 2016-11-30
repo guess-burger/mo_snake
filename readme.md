@@ -3,7 +3,7 @@ MO_Snake
 
 A simple example of a online multiplayer version the classic game Snake.
 
-The is a 80/20 solution, with 80% of the features from 20% of the implementation. 
+This is a 80/20 solution, with 80% of the features from 20% of the implementation. 
 As such there are a lot of things that could be improved, see later.
 
 Build and Running
